@@ -1,0 +1,24 @@
+# Python virtual environments and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Environment configurations and secrets
+.env
+.env.*
+
+# Foundry tool binaries and generated files
+foundryctl
+foundryctl.exe
+foundry.tar.gz
+foundry_windows_amd64/
+pours/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
