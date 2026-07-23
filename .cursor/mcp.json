@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "cost-sentinel": {
+      "command": "C:\\Users\\parth sharma\\AppData\\Roaming\\npm\\supergateway.cmd",
+      "args": [
+        "--sse",
+        "http://localhost:8000/mcp",
+        "--header",
+        "SIGNOZ-API-KEY: dummy",
+        "--logLevel",
+        "none"
+      ]
+    }
+  }
+}
