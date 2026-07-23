@@ -6,7 +6,7 @@
         "--sse",
         "http://localhost:8000/mcp",
         "--header",
-        "SIGNOZ-API-KEY: dummy",
+        "SIGNOZ-API-KEY: 8isHFUpGGkZA88pKL8rLsYt0r6VIikGKDM4004Grg3g=",
         "--logLevel",
         "none"
       ]
