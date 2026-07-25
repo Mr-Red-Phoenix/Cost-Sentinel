@@ -24,7 +24,7 @@ class Colors:
 
 class DataFetcher:
     """Queries SigNoz for the latest telemetry data."""
-    def __init__(self, prometheus_url="http://localhost:3301/api/v1/query"):
+    def __init__(self, prometheus_url="http://localhost:8080/api/v1/query"):
         self.prometheus_url = prometheus_url
 
     def _query(self, query: str):

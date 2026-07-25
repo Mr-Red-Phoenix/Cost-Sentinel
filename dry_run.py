@@ -4,7 +4,7 @@ import subprocess
 import urllib.request
 import urllib.error
 
-SIGNOZ_UI_URL = "http://localhost:3301"
+SIGNOZ_UI_URL = "http://localhost:8080"
 MCP_SERVER_URL = "http://localhost:8000/livez"
 
 def check_endpoint(url, service_name, timeout=5):

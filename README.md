@@ -59,7 +59,7 @@ Modern cloud architectures and GenAI applications suffer from **silent cost leak
 | **AI Telemetry Generator** | Python 3.13, LiteLLM, Traceloop SDK | Emits `gen_ai.*` OpenTelemetry spans to `localhost:4318`. |
 | **Infra Emulator** | Python 3.13, `opentelemetry-sdk` | Emits synthetic OTLP infrastructure metrics for NAT, VPC, & CPU. |
 | **Classification Engine** | Python 3.13, `requests`, `schedule` | Evaluates PromQL metrics & writes OTLP warning logs back to SigNoz. |
-| **Observability Backend** | SigNoz, ClickHouse, OTel Collector | Ports `:3301` (UI), `:4318` (OTLP HTTP), `:8000` (MCP Server). |
+| **Observability Backend** | SigNoz, ClickHouse, OTel Collector | Ports `:8080` (UI), `:4318` (OTLP HTTP), `:8000` (MCP Server). |
 | **MCP Bridge / Proxy** | `supergateway` | Stdio-to-SSE bridge for AI clients (Claude Desktop, Cursor, `agy`). |
 
 ---
@@ -79,7 +79,7 @@ Modern cloud architectures and GenAI applications suffer from **silent cost leak
 |                            |                                                      |
 |                            v                                                      |
 |                  +--------------------+                                           |
-|                  | SigNoz OTLP        |                                           |
+|                  | SigNoz OTel        |                                           |
 |                  | Receiver (:4318)   |                                           |
 |                  +---------+----------+                                           |
 |                            |                                                      |
@@ -98,7 +98,7 @@ Modern cloud architectures and GenAI applications suffer from **silent cost leak
 |                            | Emits Warning Logs (OTLP)                            |
 |                            v                                                      |
 |       +------------------------------------------+                                |
-|       | SigNoz UI Dashboard (:3301) & Alert Rules|                                |
+|       | SigNoz UI Dashboard (:8080) & Alert Rules|                                |
 |       +--------------------+---------------------+                                |
 |                            |                                                      |
 |                            | MCP Protocol (:8000)                                 |
@@ -114,7 +114,7 @@ Modern cloud architectures and GenAI applications suffer from **silent cost leak
 ## 📁 Directory Structure & Code Layout
 
 ```text
-SigNoz/
+Cost-Sentinel/
 ├── app.py                  # AI Agent & Token Leak Telemetry Generator (Traceloop + LiteLLM)
 ├── infra_emulator.py       # Infrastructure Metrics Emulator (NAT Bytes, VPC Hits, CPU Utilization)
 ├── sentinel.py             # Classification Engine & OTLP Alert Writer
@@ -159,17 +159,17 @@ The evaluator in `sentinel.py` / `evaluator.py` applies the following threshold 
 ### 1. Clone Repository & Install Python Dependencies
 ```bash
 git clone https://github.com/Mr-Red-Phoenix/Cost-Sentinel.git
-cd SigNoz
+cd Cost-Sentinel
 python -m pip install -r requirements.txt
 ```
 
 ### 2. Deploy SigNoz & MCP Server Stack
 Run `foundryctl` to spin up ClickHouse, SigNoz UI, OTel Collector, and SigNoz MCP Server:
 ```bash
-./foundryctl cast -f casting.yaml
+foundryctl cast -f casting.yaml
 ```
 
-- **SigNoz Web UI**: [http://localhost:3301](http://localhost:3301)
+- **SigNoz Web UI**: [http://localhost:8080](http://localhost:8080)
 - **SigNoz MCP Endpoint**: `http://localhost:8000/mcp`
 - **OTLP Receiver**: `http://localhost:4318`
 
