@@ -45,9 +45,11 @@ def run_dry_run_test():
     ai_metrics = mock_fetcher_ai.fetch_ai_metrics()
     infra_metrics = mock_fetcher_ai.fetch_infra_metrics()
     
+    writer = SignozWriter()
     alerts = evaluator.evaluate(ai_metrics, infra_metrics)
     for alert in alerts:
         logger.info(f"SUCCESS: Rule Evaluator caught: {alert['type']} - {alert['description']}")
+        writer.write_alert(alert)
 
     # Let's test the "Real Infra Leak" scenario
     # Threshold is 5000. Let's send 8000 NAT Traffic but 0 VPC Endpoint Hits.
@@ -60,17 +62,19 @@ def run_dry_run_test():
     alerts = evaluator.evaluate(ai_metrics, infra_metrics)
     for alert in alerts:
         logger.info(f"SUCCESS: Rule Evaluator caught: {alert['type']} - {alert['description']}")
+        writer.write_alert(alert)
 
-    # Scenario 3: Healthy behaviour
-    logger.info("\n--- Scenario 3: Simulating Legitimate Behavior ---")
-    mock_fetcher_healthy = MockDataFetcher(token_usage=800.0, request_count=10.0, nat_traffic=2000.0, vpc_hits=50.0)
+    # Scenario 3: Legitimate Growth
+    logger.info("\n--- Scenario 3: Simulating Legitimate Growth ---")
+    mock_fetcher_growth = MockDataFetcher(token_usage=5000.0, request_count=10.0, nat_traffic=2000.0, vpc_hits=50.0)
     
-    ai_metrics = mock_fetcher_healthy.fetch_ai_metrics()
-    infra_metrics = mock_fetcher_healthy.fetch_infra_metrics()
+    ai_metrics = mock_fetcher_growth.fetch_ai_metrics()
+    infra_metrics = mock_fetcher_growth.fetch_infra_metrics()
     
     alerts = evaluator.evaluate(ai_metrics, infra_metrics)
-    if not alerts:
-        logger.info("SUCCESS: No alerts triggered for healthy traffic.")
+    for alert in alerts:
+        logger.info(f"SUCCESS: Rule Evaluator caught: {alert['type']} - {alert['description']}")
+        assert alert['type'] == "Legitimate Growth"
 
     logger.info("\n=== DRY-RUN TEST COMPLETE ===")
 

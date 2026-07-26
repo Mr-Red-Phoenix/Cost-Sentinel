@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertCircle, AlertTriangle, Info, CheckCircle2, ChevronRight, Code2, Wrench, ShieldAlert } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, CheckCircle2, ChevronRight, Code2, Wrench, ShieldAlert, ExternalLink } from 'lucide-react';
 
 interface Anomaly {
   id: string;
@@ -12,6 +12,8 @@ interface Anomaly {
   recommendation: string;
   codeSnippet: string;
   timestamp: string;
+  traceId?: string;
+  traceUrl?: string;
 }
 
 interface AnomalyFeedProps {
@@ -85,6 +87,18 @@ export const AnomalyFeed: React.FC<AnomalyFeedProps> = ({ anomalies, onSelectAno
                   <span className="text-xs font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">
                     {anomaly.category}
                   </span>
+                  {anomaly.traceUrl && (
+                    <a
+                      href={anomaly.traceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] font-mono text-cyan-400 hover:underline flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Trace Evidence</span>
+                    </a>
+                  )}
                   <span className="text-[11px] text-slate-500">
                     {new Date(anomaly.timestamp).toLocaleTimeString()}
                   </span>

@@ -16,30 +16,64 @@ class RuleEvaluator:
         """
         alerts = []
         
-        # Rule 1: Real AI Leak
-        # If Token usage > Baseline AND Request count stable
-        # For simplicity, assuming "stable" means request_count > 0 and token usage is disproportionately high
         token_usage = ai_metrics.get("token_usage", 0)
         req_count = ai_metrics.get("request_count", 0)
-        
-        # Simple heuristic: high tokens, but low/moderate requests
-        if token_usage > self.ai_token_baseline and req_count < (token_usage / 100):
+        nat_traffic = infra_metrics.get("nat_traffic", 0)
+        vpc_hits = infra_metrics.get("vpc_endpoint_hits", 0)
+
+        # Rule 0: Legitimate Growth (Token growth scales proportionally with request volume)
+        if req_count > 0 and token_usage > self.ai_token_baseline:
+            if (token_usage / req_count) <= 800:
+                logger.info("Rule Match: Legitimate Growth Detected!")
+                alerts.append({
+                    "type": "Legitimate Growth",
+                    "severity": "INFO",
+                    "description": f"Token usage ({token_usage}) scaled proportionally with request volume ({req_count} requests). No action needed."
+                })
+                return alerts
+
+        # Rule 1: Real AI Leak
+        if token_usage > self.ai_token_baseline and (req_count == 0 or (token_usage / req_count) > 800):
             logger.warning("Rule Match: Real AI Leak Detected!")
             alerts.append({
                 "type": "Real AI Leak",
+                "severity": "HIGH",
                 "description": f"Token usage ({token_usage}) exceeded baseline without proportional request growth."
             })
             
         # Rule 2: Real Infra Leak
-        # If NAT traffic > Threshold AND VPC Endpoint hits == 0
-        nat_traffic = infra_metrics.get("nat_traffic", 0)
-        vpc_hits = infra_metrics.get("vpc_endpoint_hits", 0)
-        
         if nat_traffic > self.infra_nat_threshold and vpc_hits == 0:
             logger.warning("Rule Match: Real Infra Leak Detected!")
             alerts.append({
                 "type": "Real Infra Leak",
+                "severity": "CRITICAL",
                 "description": f"High NAT traffic ({nat_traffic}) observed with 0 VPC endpoint hits."
             })
             
+        # Agent Sentinel: RAG & LLM Decision Quality Rules (2x2 Matrix)
+        relevancy = ai_metrics.get("context_relevancy", 1.0)
+        faithfulness = ai_metrics.get("faithfulness", 1.0)
+
+        if relevancy < 0.5 and faithfulness < 0.5:
+            logger.warning("Rule Match: Compounding RAG Failure!")
+            alerts.append({
+                "type": "Compounding RAG Failure",
+                "severity": "CRITICAL",
+                "description": f"Both Context Relevancy ({relevancy:.2f}) and Faithfulness ({faithfulness:.2f}) failed. Total breakdown."
+            })
+        elif relevancy < 0.5:
+            logger.warning("Rule Match: Bad Retrieval (Hallucination Risk)!")
+            alerts.append({
+                "type": "Bad Retrieval (Hallucination Risk)",
+                "severity": "HIGH",
+                "description": f"Low Context Relevancy ({relevancy:.2f}). Vector retriever returned irrelevant document chunks."
+            })
+        elif faithfulness < 0.5:
+            logger.warning("Rule Match: Bad Agent Decision!")
+            alerts.append({
+                "type": "Bad Agent Decision",
+                "severity": "HIGH",
+                "description": f"Low Faithfulness ({faithfulness:.2f}). Agent retrieved relevant context but generated an ungrounded hallucinated decision."
+            })
+
         return alerts

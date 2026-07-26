@@ -51,7 +51,7 @@ export const SimulatorPanel: React.FC<SimulatorPanelProps> = ({ onScenarioTrigge
       </div>
 
       {/* Simulator Control Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 mb-4">
         
         {/* Button 1: Normal Traffic */}
         <button
@@ -133,7 +133,47 @@ export const SimulatorPanel: React.FC<SimulatorPanelProps> = ({ onScenarioTrigge
           </div>
         </button>
 
-        {/* Button 5: Run Sentinel Evaluator */}
+        {/* Button 5: Agent Sentinel - Bad Retrieval */}
+        <button
+          onClick={() => runScenario('bad_retrieval', 'Bad Retrieval Simulation')}
+          disabled={activeScenario !== null}
+          className="p-3.5 rounded-xl glass-panel glass-panel-hover border-rose-500/30 text-left flex flex-col justify-between group active:scale-95 transition-all disabled:opacity-50 bg-rose-950/20"
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className="p-2 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30">
+              <Flame className="w-4 h-4" />
+            </span>
+            <span className="text-[10px] font-mono text-rose-300 font-semibold">RAG FAIL</span>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-200 group-hover:text-rose-300 transition-colors">
+              Bad Retrieval
+            </h4>
+            <p className="text-[11px] text-slate-400 mt-0.5">Irrelevant Context (0.15)</p>
+          </div>
+        </button>
+
+        {/* Button 6: Agent Sentinel - Bad Decision */}
+        <button
+          onClick={() => runScenario('bad_decision', 'Bad Decision Simulation')}
+          disabled={activeScenario !== null}
+          className="p-3.5 rounded-xl glass-panel glass-panel-hover border-amber-500/30 text-left flex flex-col justify-between group active:scale-95 transition-all disabled:opacity-50 bg-amber-950/20"
+        >
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className="p-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <AlertCircle className="w-4 h-4" />
+            </span>
+            <span className="text-[10px] font-mono text-amber-300 font-semibold">AGENT FAIL</span>
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-200 group-hover:text-amber-300 transition-colors">
+              Bad Agent Decision
+            </h4>
+            <p className="text-[11px] text-slate-400 mt-0.5">Ungrounded LLM (0.20)</p>
+          </div>
+        </button>
+
+        {/* Button 7: Run Sentinel Evaluator */}
         <button
           onClick={() => runScenario('sentinel_run', 'Sentinel Classifier Cycle')}
           disabled={activeScenario !== null}

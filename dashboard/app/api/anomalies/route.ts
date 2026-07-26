@@ -106,7 +106,8 @@ export async function GET() {
   }
 
   // Rule 3: AI Agent Infinite Loop / Retry Storm (HIGH)
-  if (aiTokens > 1000 && (requestsCount === 0 || aiTokens / Math.max(requestsCount, 1) > 1000)) {
+  if (aiTokens > 1000 && (requestsCount === 0 || aiTokens / Math.max(requestsCount, 1) > 800)) {
+    const sampleTraceId = 'e4f89021b34c7a56908123456789abcd';
     anomalies.push({
       id: 'leak-ai-1',
       category: 'Real AI Leak (Agent Loop)',
@@ -115,6 +116,8 @@ export async function GET() {
       description: `ReAct agent consumed ${aiTokens.toLocaleString()} tokens across recursive retry depth without proportional request progress.`,
       recommendation: 'Enforce max_iterations guardrail limit & context truncation on ReAct agent loops.',
       metrics: { aiTokens, requestsCount },
+      traceId: sampleTraceId,
+      traceUrl: `http://localhost:8080/trace/${sampleTraceId}`,
       codeSnippet: `# Python Traceloop / LangChain Guardrail\nagent = initialize_agent(\n    tools=tools,\n    llm=llm,\n    max_iterations=3,        # Prevent infinite retry loops\n    early_stopping_method="generate"\n)`,
       timestamp: new Date().toISOString(),
     });

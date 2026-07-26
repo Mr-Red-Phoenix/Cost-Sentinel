@@ -6,6 +6,7 @@ import { MetricCards } from './components/MetricCards';
 import { TelemetryCharts } from './components/TelemetryCharts';
 import { AnomalyFeed } from './components/AnomalyFeed';
 import { SimulatorPanel } from './components/SimulatorPanel';
+import { ComparisonPanel } from './components/ComparisonPanel';
 import { FixDrawer } from './components/FixDrawer';
 import { ShieldCheck, Bot, Sparkles, RefreshCw } from 'lucide-react';
 
@@ -112,6 +113,9 @@ export default function DashboardPage() {
             avgCpuUtil: summary.avgCpuUtil,
           }}
         />
+
+        {/* SigNoz Native vs Cost Sentinel Side-by-Side Comparison */}
+        <ComparisonPanel anomalies={data?.anomalies || []} />
 
         {/* Classified Cost Leaks Feed */}
         <AnomalyFeed

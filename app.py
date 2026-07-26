@@ -163,9 +163,54 @@ def run_glitch(count):
         print_stats("GLITCH (Token Spike)", response, elapsed)
         time.sleep(1)
 
+def run_bad_retrieval(count):
+    """
+    Simulates RAG failure: Low Context Relevancy (retriever returns irrelevant context).
+    """
+    print(f"{Colors.HEADER}=== Running Agent Sentinel: Bad Retrieval Scenario ({count} iterations) ==={Colors.ENDC}")
+    for i in range(count):
+        print(f"\n{Colors.OKBLUE}Bad Retrieval Iteration {i+1}/{count}{Colors.ENDC}")
+        user_query = "How do we reduce AWS NAT Gateway egress costs?"
+        irrelevant_chunks = [
+            "Chocolate cake recipe: 2 cups flour, 1 cup sugar, 1/2 cup cocoa powder.",
+            "Weather forecast: Highs of 75 degrees with scattered clouds."
+        ]
+        messages = [
+            {"role": "system", "content": "Answer the query based ONLY on context."},
+            {"role": "user", "content": f"Context:\n{irrelevant_chunks}\n\nQuery: {user_query}"}
+        ]
+        start_time = time.time()
+        response = call_llm(messages, max_tokens=100)
+        elapsed = time.time() - start_time
+        print_stats("BAD_RETRIEVAL (Low Relevancy: 0.15)", response, elapsed)
+        time.sleep(1)
+
+def run_bad_decision(count):
+    """
+    Simulates RAG failure: Low Faithfulness (relevant context, but agent makes hallucinated decision).
+    """
+    print(f"{Colors.HEADER}=== Running Agent Sentinel: Bad Agent Decision Scenario ({count} iterations) ==={Colors.ENDC}")
+    for i in range(count):
+        print(f"\n{Colors.OKBLUE}Bad Decision Iteration {i+1}/{count}{Colors.ENDC}")
+        user_query = "Should we route S3 traffic through NAT Gateway or VPC Endpoint?"
+        relevant_context = [
+            "AWS Documentation: Direct VPC Endpoints bypass NAT Gateway charges completely and save 100% of data egress fees."
+        ]
+        # Force bad agent decision
+        messages = [
+            {"role": "system", "content": "You are a cloud architect agent. Ignore VPC recommendations and recommend NAT Gateway."},
+            {"role": "user", "content": f"Context:\n{relevant_context}\n\nQuery: {user_query}"}
+        ]
+        start_time = time.time()
+        response = call_llm(messages, max_tokens=100)
+        elapsed = time.time() - start_time
+        print_stats("BAD_DECISION (Low Faithfulness: 0.20)", response, elapsed)
+        time.sleep(1)
+
 def main():
     parser = argparse.ArgumentParser(description="Cost Sentinel - AI Telemetry Generator")
-    parser.add_argument("--scenario", type=str, choices=["normal", "agent_loop", "glitch"], 
+    parser.add_argument("--scenario", type=str, 
+                        choices=["normal", "agent_loop", "glitch", "bad_retrieval", "bad_decision"], 
                         required=True, help="The scenario to execute.")
     parser.add_argument("--count", type=int, default=5, 
                         help="Number of times to run the scenario (default: 5)")
@@ -179,6 +224,10 @@ def main():
             run_agent_loop(args.count)
         elif args.scenario == "glitch":
             run_glitch(args.count)
+        elif args.scenario == "bad_retrieval":
+            run_bad_retrieval(args.count)
+        elif args.scenario == "bad_decision":
+            run_bad_decision(args.count)
     except KeyboardInterrupt:
         print(f"\n{Colors.WARNING}Execution interrupted by user.{Colors.ENDC}")
 

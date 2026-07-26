@@ -146,6 +146,12 @@ The evaluator in `sentinel.py` / `evaluator.py` applies the following threshold 
 | **Real Infra Leak (Idle)** | `cpu_util < 5.0%` (for active instances) | **MEDIUM** | Terminate or downsize underutilized EC2 compute instance. |
 | **Real AI Leak (Loop)** | `ai_tokens > 1,000` without request growth | **HIGH** | Enforce `max_iterations` guardrail limit on ReAct agent loop context. |
 | **Measurement Glitch** | Cost spike detected with `nat_bytes == 0` & `ai_tokens == 0` | **INFO** | No action required (phantom metric spike). |
+| **Bad Retrieval (RAG)** | `context_relevancy < 0.5` | **HIGH** | Fix vector index embeddings or re-ranker thresholds. |
+| **Bad Agent Decision** | `relevancy >= 0.5` AND `faithfulness < 0.5` | **HIGH** | Refine LLM system prompt instructions & temperature for strict grounding. |
+| **Compounding Failure** | `relevancy < 0.5` AND `faithfulness < 0.5` | **CRITICAL** | Total breakdown in retrieval & LLM grounding. |
+
+> **Scope Note on 4th Quadrant (High Relevancy + High Faithfulness with incorrect output)**: 
+> *We intentionally scoped Agent Sentinel to the three active failure modes above. The 4th quadrant (where retrieved context is relevant and the LLM answer is faithful, but the output is still incorrect due to a stale or out-of-date vector knowledge index) is intentionally out-of-scope for v1.*
 
 ---
 

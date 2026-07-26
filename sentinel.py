@@ -53,13 +53,16 @@ class DataFetcher:
         
         # AI Tokens (fallback to 0 if not present since we use trace-based generation primarily)
         ai_tokens = self._query('gen_ai_usage_completion_tokens') or 0.0
+        requests_count = self._query('gen_ai_requests_total') or 0.0
 
         return {
             "nat_bytes": nat_bytes,
             "vpc_hits": vpc_hits,
             "cpu_util": cpu_util,
             "ai_tokens": ai_tokens,
-            "dummy_cost_spike": False # Used to simulate glitch rule
+            "requests_count": requests_count,
+            "dummy_cost_spike": False, # Used to simulate glitch rule
+            "is_legitimate_growth": False, # Flag for simulation testing
         }
 
 
@@ -67,8 +70,23 @@ class RuleEvaluator:
     """Evaluates business logic rules against fetched data."""
     def evaluate_all(self, data):
         leaks = []
+        
+        req_count = data.get("requests_count", 0.0)
+        ai_tokens = data.get("ai_tokens", 0.0)
+        nat_bytes = data.get("nat_bytes", 0.0)
+        vpc_hits = data.get("vpc_hits", 0.0)
+        
+        # 0. Legitimate Growth: Usage increases proportionally with request volume
+        if data.get("is_legitimate_growth") or (req_count > 0 and ai_tokens > 1000 and (ai_tokens / req_count) <= 800):
+            leaks.append({
+                "type": "legitimate growth — no action needed",
+                "severity": "INFO",
+                "recommendation": "Usage growth is proportional to request volume. No action required."
+            })
+            return leaks
+
         # 1. Infra Leak: Missing VPC Endpoint
-        if data["nat_bytes"] > 1000 and data["vpc_hits"] == 0:
+        if nat_bytes > 1000 and vpc_hits == 0:
             leaks.append({
                 "type": "real leak: missing VPC endpoint",
                 "severity": "CRITICAL",
@@ -76,7 +94,7 @@ class RuleEvaluator:
             })
             
         # 2. Idle Resource: Wasting compute
-        if data["cpu_util"] is not None and data["cpu_util"] < 5.0:
+        if data.get("cpu_util") is not None and data["cpu_util"] < 5.0:
             leaks.append({
                 "type": "real leak: idle resource",
                 "severity": "MEDIUM",
@@ -84,7 +102,7 @@ class RuleEvaluator:
             })
             
         # 3. AI Leak: Agent Loop / Retry Storm
-        if data["ai_tokens"] > 1000:
+        if ai_tokens > 1000 and (req_count == 0 or (ai_tokens / max(req_count, 1.0)) > 800):
             leaks.append({
                 "type": "real leak: agent loop / retry storm",
                 "severity": "HIGH",
@@ -92,11 +110,29 @@ class RuleEvaluator:
             })
             
         # 4. Glitch: Cost spike without underlying activity
-        if data.get("dummy_cost_spike") and data["nat_bytes"] == 0 and data["ai_tokens"] == 0:
+        if data.get("dummy_cost_spike") and nat_bytes == 0 and ai_tokens == 0:
             leaks.append({
                 "type": "measurement glitch — no action needed",
                 "severity": "INFO",
                 "recommendation": "No action needed."
+            })
+            
+        # 5. Agent Sentinel RAG & LLM Decision Quality Rules
+        relevancy = data.get("context_relevancy", 1.0)
+        faithfulness = data.get("faithfulness", 1.0)
+        
+        if relevancy < 0.5:
+            leaks.append({
+                "type": "bad retrieval: low context relevancy",
+                "severity": "HIGH",
+                "recommendation": "Fix vector index embeddings or re-ranker thresholds (irrelevant context retrieved)."
+            })
+
+        if faithfulness < 0.5:
+            leaks.append({
+                "type": "bad agent decision: ungrounded hallucination",
+                "severity": "HIGH",
+                "recommendation": "Refine LLM prompt system instructions & temperature to enforce strict grounding."
             })
             
         return leaks

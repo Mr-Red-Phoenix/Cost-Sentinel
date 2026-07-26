@@ -31,6 +31,12 @@ export async function POST(req: Request) {
     } else if (scenario === 'idle_resource') {
       command = `${pythonBin} infra_emulator.py --scenario idle_resource --duration ${duration}`;
       description = `Simulating idle compute instance billing (${duration}s pulse)`;
+    } else if (scenario === 'bad_retrieval') {
+      command = `${pythonBin} app.py --scenario bad_retrieval --count ${count}`;
+      description = `Simulating Agent Sentinel bad retrieval (Low Context Relevancy)`;
+    } else if (scenario === 'bad_decision') {
+      command = `${pythonBin} app.py --scenario bad_decision --count ${count}`;
+      description = `Simulating Agent Sentinel bad decision (Low Faithfulness)`;
     } else if (scenario === 'sentinel_run') {
       command = `${pythonBin} sentinel.py --run-once --simulate`;
       description = `Executing Cost Sentinel evaluation cycle`;
