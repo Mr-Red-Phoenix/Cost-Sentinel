@@ -1,112 +1,129 @@
-'use client';
-
 import React, { useState } from 'react';
-import { X, Copy, Check, Code2, Wrench, ShieldCheck, Terminal } from 'lucide-react';
-
-interface Anomaly {
-  id: string;
-  category: string;
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO';
-  title: string;
-  description: string;
-  recommendation: string;
-  codeSnippet: string;
-  timestamp: string;
-}
+import { X, Copy, Check, Wrench, ShieldAlert, Cpu } from 'lucide-react';
+import { Anomaly } from '../types/sentinel';
 
 interface FixDrawerProps {
   anomaly: Anomaly | null;
   onClose: () => void;
 }
 
-export const FixDrawer: React.FC<FixDrawerProps> = ({ anomaly, onClose }) => {
+export function FixDrawer({ anomaly, onClose }: FixDrawerProps) {
   const [copied, setCopied] = useState(false);
 
   if (!anomaly) return null;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(anomaly.codeSnippet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (anomaly.codeSnippet) {
+      navigator.clipboard.writeText(anomaly.codeSnippet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
+  const severityColor = 
+    anomaly.severity === 'CRITICAL' ? 'text-rose-700 bg-rose-50 border border-rose-200' :
+    anomaly.severity === 'HIGH' ? 'text-amber-700 bg-amber-50 border border-amber-200' :
+    'text-yellow-705 bg-yellow-50 border border-yellow-200';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="glass-panel w-full max-w-2xl rounded-2xl border border-slate-700/80 shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-40 transition-opacity"
+        onClick={onClose}
+      />
+      
+      {/* Drawer */}
+      <div className="fixed inset-y-0 right-0 w-full md:w-[600px] bg-white border-l border-slate-200 z-50 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              <Wrench className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wide">
-                Remediation Fix • {anomaly.category}
+        <div className="flex items-start justify-between p-6 border-b border-slate-100 bg-slate-50">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${severityColor}`}>
+                {anomaly.severity}
               </span>
-              <h2 className="text-base font-bold text-white">{anomaly.title}</h2>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-slate-100 text-slate-650 border border-slate-200">
+                {anomaly.category}
+              </span>
             </div>
+            <h2 className="text-xl font-bold text-slate-800 leading-tight">{anomaly.title}</h2>
           </div>
-          <button
+          <button 
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Root Cause Details */}
-        <div className="space-y-4 text-xs">
-          <div>
-            <h4 className="font-semibold text-slate-300 mb-1">Root Cause Analysis</h4>
-            <p className="text-slate-400 bg-slate-900/60 p-3 rounded-xl border border-slate-800 leading-relaxed">
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          
+          {/* Root Cause Analysis */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-slate-400" />
+              Root Cause Analysis
+            </h3>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-250/80 text-slate-705 text-sm leading-relaxed">
               {anomaly.description}
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-semibold text-slate-300 mb-1">Recommended Remediation Action</h4>
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
-              <span>{anomaly.recommendation}</span>
             </div>
           </div>
 
-          {/* Code Snippet Fix */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-slate-300 font-semibold">
-                <Code2 className="w-4 h-4 text-cyan-400" />
-                <span>Automated Fix Snippet</span>
+          {/* Remediation Action */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-indigo-650 uppercase tracking-wider flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-indigo-500" />
+              Remediation Action
+            </h3>
+            <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-200/80 text-indigo-900 text-sm leading-relaxed">
+              {anomaly.recommendation}
+            </div>
+          </div>
+
+          {/* Automated Fix Snippet */}
+          {anomaly.codeSnippet && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-cyan-655" />
+                  Automated Fix
+                </h3>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-600 transition-colors border border-slate-200"
+                >
+                  {copied ? (
+                    <><Check className="w-3.5 h-3.5 text-emerald-600" /> <span className="text-emerald-600">Copied!</span></>
+                  ) : (
+                    <><Copy className="w-3.5 h-3.5" /> Copy Code</>
+                  )}
+                </button>
               </div>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-all active:scale-95"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
-                <span>{copied ? 'Copied!' : 'Copy Code'}</span>
-              </button>
+              <div className="relative group">
+                <pre className="p-4 rounded-xl bg-slate-900 border border-slate-950 overflow-x-auto">
+                  <code className="text-xs sm:text-sm font-mono text-cyan-400 leading-relaxed whitespace-pre-wrap block">
+                    {anomaly.codeSnippet}
+                  </code>
+                </pre>
+              </div>
             </div>
+          )}
 
-            <div className="relative rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs overflow-x-auto">
-              <pre className="text-cyan-300 whitespace-pre-wrap leading-relaxed">
-                {anomaly.codeSnippet}
-              </pre>
-            </div>
-          </div>
         </div>
-
+        
         {/* Footer */}
-        <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs transition-all shadow-lg shadow-cyan-600/20"
+            className="px-6 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-colors"
           >
-            Close Remediation Guide
+            Dismiss
           </button>
         </div>
 
       </div>
-    </div>
+    </>
   );
-};
+}

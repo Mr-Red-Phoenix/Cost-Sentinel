@@ -4,7 +4,7 @@ import subprocess
 import urllib.request
 import urllib.error
 
-SIGNOZ_UI_URL = "http://localhost:8080"
+SIGNOZ_UI_URL = "http://localhost:18080"
 MCP_SERVER_URL = "http://localhost:8000/livez"
 
 def check_endpoint(url, service_name, timeout=5):
@@ -46,7 +46,7 @@ def main():
     mcp_ok = check_endpoint(MCP_SERVER_URL, "SigNoz MCP Server")
 
     if not signoz_ok:
-        print("\n[ERROR] SigNoz UI is not reachable on http://localhost:3301.")
+        print("\n[ERROR] SigNoz UI is not reachable on http://localhost:18080.")
         print("   Please start services with `foundryctl cast -f casting.yaml` before running tests.")
         sys.exit(1)
 

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+import path from 'path';
+import fs from 'fs';
 
 export const dynamic = 'force-dynamic';
 
-const SIGNOZ_URL = process.env.SIGNOZ_API_URL || 'http://localhost:8080/api/v1/query';
+const SIGNOZ_URL = process.env.SIGNOZ_API_URL || 'http://localhost:18080/api/v1/query';
 const SIGNOZ_KEY = process.env.SIGNOZ_API_KEY || '8isHFUpGGkZA88pKL8rLsYt0r6VIikGKDM4004Grg3g=';
 
 export async function GET() {
@@ -12,6 +14,18 @@ export async function GET() {
   let aiTokens = 0;
   let requestsCount = 0;
   let isSimulated = false;
+
+  // Read active scenario from local file
+  let activeScenario = 'normal';
+  try {
+    const activeScenarioPath = path.resolve(process.cwd(), 'active_scenario.json');
+    if (fs.existsSync(activeScenarioPath)) {
+      const activeData = JSON.parse(fs.readFileSync(activeScenarioPath, 'utf8'));
+      activeScenario = activeData.scenario || 'normal';
+    }
+  } catch (e) {
+    console.error('Failed to read active_scenario.json, defaulting to normal:', e);
+  }
 
   try {
     // 1. Fetch AI Tokens metric
@@ -65,11 +79,39 @@ export async function GET() {
   // If no live telemetry detected, present live simulated active scenario payload for demonstration
   if (natBytes === 0 && aiTokens === 0 && vpcHits === 0) {
     isSimulated = true;
-    natBytes = 105400000; // ~105 MB unrouted
-    vpcHits = 0;
-    cpuUtil = 3.2; // Idle EC2
-    aiTokens = 5420; // High token surge
-    requestsCount = 2; // Low request count -> AI loop!
+    
+    if (activeScenario === 'infra_leak') {
+      natBytes = 105400000; // ~105 MB unrouted
+      vpcHits = 0;
+      cpuUtil = 48.0;
+      aiTokens = 0;
+      requestsCount = 0;
+    } else if (activeScenario === 'agent_loop') {
+      natBytes = 0;
+      vpcHits = 0;
+      cpuUtil = 42.0;
+      aiTokens = 5420; // High token surge
+      requestsCount = 2; // Low request count -> AI loop!
+    } else if (activeScenario === 'glitch') {
+      natBytes = 0;
+      vpcHits = 0;
+      cpuUtil = 38.0;
+      aiTokens = 8500;
+      requestsCount = 1;
+    } else if (activeScenario === 'idle_resource') {
+      natBytes = 0;
+      vpcHits = 0;
+      cpuUtil = 3.2; // Idle EC2
+      aiTokens = 0;
+      requestsCount = 0;
+    } else {
+      // 'normal' or empty
+      natBytes = 1200000; // ~1.2 MB healthy NAT
+      vpcHits = 45;
+      cpuUtil = 48.0; // Normal load
+      aiTokens = 800; // Normal token usage
+      requestsCount = 10;
+    }
   }
 
   // Evaluate Sentinel Multi-Category Rules Engine
@@ -106,8 +148,7 @@ export async function GET() {
   }
 
   // Rule 3: AI Agent Infinite Loop / Retry Storm (HIGH)
-  if (aiTokens > 1000 && (requestsCount === 0 || aiTokens / Math.max(requestsCount, 1) > 800)) {
-    const sampleTraceId = 'e4f89021b34c7a56908123456789abcd';
+  if (aiTokens > 1000 && (requestsCount === 0 || aiTokens / Math.max(requestsCount, 1) > 1000)) {
     anomalies.push({
       id: 'leak-ai-1',
       category: 'Real AI Leak (Agent Loop)',
@@ -116,8 +157,6 @@ export async function GET() {
       description: `ReAct agent consumed ${aiTokens.toLocaleString()} tokens across recursive retry depth without proportional request progress.`,
       recommendation: 'Enforce max_iterations guardrail limit & context truncation on ReAct agent loops.',
       metrics: { aiTokens, requestsCount },
-      traceId: sampleTraceId,
-      traceUrl: `http://localhost:8080/trace/${sampleTraceId}`,
       codeSnippet: `# Python Traceloop / LangChain Guardrail\nagent = initialize_agent(\n    tools=tools,\n    llm=llm,\n    max_iterations=3,        # Prevent infinite retry loops\n    early_stopping_method="generate"\n)`,
       timestamp: new Date().toISOString(),
     });

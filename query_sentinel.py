@@ -2,7 +2,7 @@ import requests
 import json
 import sys
 
-SIGNOZ_UI = "http://localhost:3301"
+SIGNOZ_UI = "http://localhost:18080"
 SIGNOZ_MCP = "http://localhost:8000/mcp"
 
 def query_anomalies():

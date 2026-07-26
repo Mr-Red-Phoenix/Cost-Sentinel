@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import path from 'path';
 import util from 'util';
+import fs from 'fs';
 
 const execPromise = util.promisify(exec);
 
@@ -11,7 +12,19 @@ export async function POST(req: Request) {
     const { scenario = 'normal', count = 2, duration = 10 } = body;
 
     const projectRoot = path.resolve(process.cwd(), '..');
-    const pythonBin = path.join(projectRoot, 'venv', 'bin', 'python');
+    
+    // Auto-detect .venv vs venv and Windows vs Unix paths
+    let pythonBin = '';
+    const venvName = fs.existsSync(path.join(projectRoot, '.venv')) ? '.venv' : 'venv';
+    const isWindows = process.platform === 'win32';
+    
+    if (isWindows) {
+      const winPath = path.join(projectRoot, venvName, 'Scripts', 'python.exe');
+      pythonBin = fs.existsSync(winPath) ? winPath : 'python';
+    } else {
+      const unixPath = path.join(projectRoot, venvName, 'bin', 'python');
+      pythonBin = fs.existsSync(unixPath) ? unixPath : 'python3';
+    }
 
     let command = '';
     let description = '';
@@ -31,12 +44,6 @@ export async function POST(req: Request) {
     } else if (scenario === 'idle_resource') {
       command = `${pythonBin} infra_emulator.py --scenario idle_resource --duration ${duration}`;
       description = `Simulating idle compute instance billing (${duration}s pulse)`;
-    } else if (scenario === 'bad_retrieval') {
-      command = `${pythonBin} app.py --scenario bad_retrieval --count ${count}`;
-      description = `Simulating Agent Sentinel bad retrieval (Low Context Relevancy)`;
-    } else if (scenario === 'bad_decision') {
-      command = `${pythonBin} app.py --scenario bad_decision --count ${count}`;
-      description = `Simulating Agent Sentinel bad decision (Low Faithfulness)`;
     } else if (scenario === 'sentinel_run') {
       command = `${pythonBin} sentinel.py --run-once --simulate`;
       description = `Executing Cost Sentinel evaluation cycle`;
@@ -45,6 +52,15 @@ export async function POST(req: Request) {
     }
 
     const { stdout, stderr } = await execPromise(command, { cwd: projectRoot });
+
+    // Save active scenario state to local JSON file
+    try {
+      const fs = require('fs');
+      const activeScenarioPath = path.resolve(process.cwd(), 'active_scenario.json');
+      fs.writeFileSync(activeScenarioPath, JSON.stringify({ scenario, timestamp: new Date().toISOString() }));
+    } catch (e) {
+      console.error('Failed to write active_scenario.json:', e);
+    }
 
     return NextResponse.json({
       success: true,
