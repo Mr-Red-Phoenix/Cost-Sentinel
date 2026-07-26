@@ -115,10 +115,10 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
       const past = new Date(baseDate.getTime() - i * 2000);
       initialData.push({
         timestamp: past.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        tokens: tokens > 0 ? Math.round(tokens * (0.8 + Math.random() * 0.4)) : 800,
-        natEgressMb: natMb > 0 ? Math.round(natMb * (0.8 + Math.random() * 0.4)) : 15,
-        vpcHits: vpcHits > 0 ? Math.round(vpcHits * (0.8 + Math.random() * 0.4)) : 45,
-        cpuLoad: cpu > 0 ? Math.min(100, parseFloat((cpu * (0.8 + Math.random() * 0.4)).toFixed(1))) : 48
+        tokens: tokens > 0 ? Math.round(tokens * (0.6 + Math.random() * 0.8)) : 800,
+        natEgressMb: natMb > 0 ? Math.round(natMb * (0.6 + Math.random() * 0.8)) : 15,
+        vpcHits: vpcHits > 0 ? Math.round(vpcHits * (0.6 + Math.random() * 0.8)) : 45,
+        cpuLoad: cpu > 0 ? Math.min(100, parseFloat((cpu * (0.6 + Math.random() * 0.8)).toFixed(1))) : 48
       });
     }
     setChartData(initialData);
@@ -133,8 +133,8 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
         const now = new Date();
         const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         
-        // Add ±3% random jitter to simulate real telemetry fluctuation
-        const jitter = (val: number) => val * (1 + (Math.random() * 0.06 - 0.03));
+        // Add ±20% random jitter to simulate high-activity live telemetry
+        const jitter = (val: number) => val * (1 + (Math.random() * 0.40 - 0.20));
         
         const newPoint = {
           timestamp: timeLabel,
@@ -194,7 +194,7 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
                 </linearGradient>
               </defs>
               <XAxis dataKey="timestamp" hide={true} />
-              <YAxis hide={true} />
+              <YAxis hide={true} domain={['dataMin - 100', 'dataMax + 100']} />
               <Tooltip content={<CustomTooltip />} cursor={{ stroke: isDark ? '#334155' : '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
               <Area type="monotone" dataKey="tokens" name="Tokens" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorTokens)" />
             </AreaChart>
@@ -229,7 +229,7 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
               <XAxis dataKey="timestamp" hide={true} />
-              <YAxis hide={true} />
+              <YAxis hide={true} domain={['dataMin - 5', 'dataMax + 5']} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9', opacity: 0.6 }} />
               <Bar dataKey="natEgressMb" name="NAT Egress" fill="#06b6d4" radius={[3, 3, 0, 0]} maxBarSize={15} />
               <Bar dataKey="vpcHits" name="VPC Hits" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={15} />
@@ -265,8 +265,8 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <XAxis dataKey="timestamp" hide={true} />
-              <YAxis hide={true} />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: isDark ? '#334155' : '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
+              <YAxis domain={['dataMin - 10', 'dataMax + 10']} hide={true} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: isDark ? '#334155' : '#cbd5e1', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
               <Line type="monotone" dataKey="cpuLoad" name="CPU Load %" stroke="#6366f1" strokeWidth={3} dot={{ fill: '#6366f1', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }} />
             </LineChart>
           </ResponsiveContainer>
@@ -401,7 +401,7 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.15} />
                     <XAxis dataKey="timestamp" stroke={isDark ? "#475569" : "#cbd5e1"} tick={{ fill: "#64748b", fontSize: 12 }} tickMargin={10} axisLine={true} tickLine={true} />
-                    <YAxis stroke={isDark ? "#475569" : "#cbd5e1"} tickFormatter={(val) => val >= 1000 ? `${(val/1000).toFixed(0)}K` : val} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={true} tickLine={true} />
+                    <YAxis domain={['dataMin - 100', 'dataMax + 100']} stroke={isDark ? "#475569" : "#cbd5e1"} tickFormatter={(val) => val >= 1000 ? `${(val/1000).toFixed(0)}K` : val} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={true} tickLine={true} />
                     <Tooltip content={<ZoomedTooltip />} cursor={{ stroke: '#f59e0b', strokeWidth: 1, strokeDasharray: '3 3' }} />
                     <Area type="monotone" dataKey="tokens" name="Tokens" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorTokensExpanded)" activeDot={{ r: 6, strokeWidth: 0, fill: '#f59e0b' }} />
                   </AreaChart>
@@ -409,7 +409,7 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
                   <BarChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.15} />
                     <XAxis dataKey="timestamp" stroke={isDark ? "#475569" : "#cbd5e1"} tick={{ fill: "#64748b", fontSize: 12 }} tickMargin={10} axisLine={true} tickLine={true} />
-                    <YAxis stroke={isDark ? "#475569" : "#cbd5e1"} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={true} tickLine={true} />
+                    <YAxis domain={['dataMin - 5', 'dataMax + 5']} stroke={isDark ? "#475569" : "#cbd5e1"} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={true} tickLine={true} />
                     <Tooltip content={<ZoomedTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
                     <Bar dataKey="natEgressMb" name="NAT Egress MB" fill="#06b6d4" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     <Bar dataKey="vpcHits" name="VPC Hits" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
@@ -418,7 +418,7 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
                   <LineChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.15} />
                     <XAxis dataKey="timestamp" stroke={isDark ? "#475569" : "#cbd5e1"} tick={{ fill: "#64748b", fontSize: 12 }} tickMargin={10} axisLine={true} tickLine={true} />
-                    <YAxis domain={[0, 100]} stroke={isDark ? "#475569" : "#cbd5e1"} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={true} tickLine={true} />
+                    <YAxis domain={['dataMin - 5', 'dataMax + 5']} stroke={isDark ? "#475569" : "#cbd5e1"} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={true} tickLine={true} />
                     <Tooltip content={<ZoomedTooltip />} cursor={{ stroke: isDark ? '#475569' : '#cbd5e1', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
                     <ReferenceLine y={5} stroke="#f43f5e" strokeDasharray="4 4" label={{ position: 'insideTopLeft', value: 'IDLE THRESHOLD (<5%)', fill: '#f43f5e', fontSize: 10, fontWeight: 'bold' }} />
                     <Line type="monotone" dataKey="cpuLoad" name="CPU Load %" stroke="#6366f1" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: "#6366f1", stroke: "#fff", strokeWidth: 2 }} />
