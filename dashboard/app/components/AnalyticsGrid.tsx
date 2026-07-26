@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -102,14 +102,58 @@ export function AnalyticsGrid({ summary }: AnalyticsGridProps) {
   // Convert bytes to MB for display
   const natMb = Math.round(natBytes / 1000000);
 
-  // Generate smooth time series data ending in the current metrics
-  const data = [
-    { timestamp: '10m ago', tokens: tokens > 0 ? Math.round(tokens * 0.15) : 800, natEgressMb: natBytes > 0 ? Math.round(natMb * 0.15) : 15, vpcHits: vpcHits > 0 ? Math.round(vpcHits * 0.8) : 45, cpuLoad: cpu > 0 ? Math.min(100, Math.round(cpu * 1.5)) : 48 },
-    { timestamp: '8m ago', tokens: tokens > 0 ? Math.round(tokens * 0.22) : 1200, natEgressMb: natBytes > 0 ? Math.round(natMb * 0.21) : 22, vpcHits: vpcHits > 0 ? Math.round(vpcHits * 0.9) : 50, cpuLoad: cpu > 0 ? Math.min(100, Math.round(cpu * 1.6)) : 52 },
-    { timestamp: '6m ago', tokens: tokens > 0 ? Math.round(tokens * 0.20) : 1100, natEgressMb: natBytes > 0 ? Math.round(natMb * 0.17) : 18, vpcHits: vpcHits > 0 ? Math.round(vpcHits * 0.85) : 48, cpuLoad: cpu > 0 ? Math.min(100, Math.round(cpu * 1.3)) : 42 },
-    { timestamp: '4m ago', tokens: tokens > 0 ? Math.round(tokens * 0.65) : 3500, natEgressMb: natBytes > 0 ? Math.round(natMb * 0.62) : 65, vpcHits: vpcHits > 0 ? Math.round(vpcHits * 0.1) : 5, cpuLoad: cpu > 0 ? Math.min(100, Math.round(cpu * 0.8)) : 12 },
-    { timestamp: '2m ago', tokens: tokens > 0 ? Math.round(tokens * 0.90) : 4900, natEgressMb: natBytes > 0 ? Math.round(natMb * 0.90) : 95, vpcHits: vpcHits > 0 ? 0 : 0, cpuLoad: cpu > 0 ? Math.min(100, Math.round(cpu * 0.9)) : 4 },
-    { timestamp: 'Now', tokens: tokens || 5420, natEgressMb: natMb || 105, vpcHits: vpcHits || 0, cpuLoad: cpu || 3.2 },
+  // Dynamic Time-Series State for Live Scrolling Charts
+  const [mounted, setMounted] = useState(false);
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  // Initialize historical data on mount
+  useEffect(() => {
+    setMounted(true);
+    const initialData = [];
+    const baseDate = new Date();
+    for (let i = 14; i >= 0; i--) {
+      const past = new Date(baseDate.getTime() - i * 2000);
+      initialData.push({
+        timestamp: past.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        tokens: tokens > 0 ? Math.round(tokens * (0.8 + Math.random() * 0.4)) : 800,
+        natEgressMb: natMb > 0 ? Math.round(natMb * (0.8 + Math.random() * 0.4)) : 15,
+        vpcHits: vpcHits > 0 ? Math.round(vpcHits * (0.8 + Math.random() * 0.4)) : 45,
+        cpuLoad: cpu > 0 ? Math.min(100, parseFloat((cpu * (0.8 + Math.random() * 0.4)).toFixed(1))) : 48
+      });
+    }
+    setChartData(initialData);
+  }, []); // Run once on mount
+
+  // Live rolling update every 2 seconds
+  useEffect(() => {
+    if (!mounted) return;
+    const interval = setInterval(() => {
+      setChartData(prev => {
+        if (prev.length === 0) return prev;
+        const now = new Date();
+        const timeLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        // Add ±3% random jitter to simulate real telemetry fluctuation
+        const jitter = (val: number) => val * (1 + (Math.random() * 0.06 - 0.03));
+        
+        const newPoint = {
+          timestamp: timeLabel,
+          tokens: Math.round(jitter(tokens || 800)),
+          natEgressMb: Math.round(jitter(natMb || 15)),
+          vpcHits: Math.round(jitter(vpcHits || 45)),
+          cpuLoad: parseFloat(Math.min(100, Math.max(0, jitter(cpu || 48))).toFixed(1))
+        };
+        
+        const nextData = [...prev, newPoint];
+        return nextData.slice(nextData.length - 15);
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [mounted, tokens, natMb, vpcHits, cpu]);
+
+  // Fallback data for SSR layout mapping
+  const data = mounted && chartData.length > 0 ? chartData : [
+    { timestamp: '...', tokens: 0, natEgressMb: 0, vpcHits: 0, cpuLoad: 0 },
   ];
 
   const chartContainerClass = "p-5 rounded-2xl border border-slate-205 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/80 backdrop-blur-xl shadow-xl dark:shadow-2xl shadow-slate-200/50 dark:shadow-slate-950/50 flex flex-col h-[300px] transition-all duration-300 hover:scale-[1.01] cursor-pointer group";
